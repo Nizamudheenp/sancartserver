@@ -81,3 +81,28 @@ exports.getAllOrders = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.cancelOrder = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const order = await orderDB.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    // Verify ownership
+    if (order.userId && order.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to cancel this order" });
+    }
+    // Check status
+    const cancellableStatuses = ["pending", "processing", "paid"];
+    if (!cancellableStatuses.includes(order.status.toLowerCase())) {
+      return res.status(400).json({ message: `Cannot cancel order in '${order.status}' status.` });
+    }
+
+    order.status = "cancelled";
+    const updatedOrder = await order.save();
+    res.json(new OrderResponseDTO(updatedOrder));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
