@@ -12,12 +12,12 @@ const createOrderSchema = z.object({
   totalAmount: z.coerce.number().positive('Total amount must be a positive number'),
   shippingAddress: z.string().trim().min(1, 'Shipping address is required'),
   paymentId: z.string().trim().min(1, 'Payment ID is required'),
-  status: z.enum(["processing", "shipped", "paid", "delivered", "cancelled"]).default("processing"),
+  status: z.enum(["processing", "shipped", "paid", "delivered", "cancelled", "refunded"]).default("processing"),
   guestEmail: z.string().trim().email('Invalid email format').optional().or(z.literal('')),
 });
 
 const updateOrderStatusSchema = z.object({
-  status: z.enum(["processing", "shipped", "paid", "delivered", "cancelled"], {
+  status: z.enum(["processing", "shipped", "paid", "delivered", "cancelled", "refunded"], {
     errorMap: () => ({ message: 'Invalid order status value' })
   }),
 });
