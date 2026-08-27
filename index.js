@@ -11,6 +11,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/AuthRoute");
 const productRoutes = require("./routes/ProductsRoute");
 const orderRoutes = require("./routes/OrderRoute");
+const returnRoutes = require("./routes/ReturnRoute");
 
 const app = express();
 
@@ -38,6 +39,7 @@ const sitemapRoutes = require("./routes/SitemapRoute");
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/returns', returnRoutes);
 app.use('/', sitemapRoutes); // Expose sitemap.xml
 
 // Register global error handler

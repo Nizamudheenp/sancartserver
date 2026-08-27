@@ -106,3 +106,19 @@ exports.cancelOrder = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.getOrderDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid order ID format" });
+    }
+    const order = await orderDB.findById(id).populate('products.productId', 'name price images brand');
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    res.json(new OrderResponseDTO(order));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
