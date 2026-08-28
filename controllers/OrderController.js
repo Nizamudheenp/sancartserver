@@ -1,4 +1,5 @@
 const orderDB = require("../models/OrderModel");
+const CounterDB = require("../models/CounterModel");
 const OrderResponseDTO = require("../dtos/orderdto/OrderResponseDTO");
 const CreateOrderRequestDTO = require("../dtos/orderdto/CreateOrderRequestDTO");
 const UpdateOrderStatusRequestDTO = require("../dtos/orderdto/UpdateOrderStatusRequestDTO");
@@ -26,6 +27,18 @@ exports.createOrder = async (req, res) => {
       timestamp: new Date(),
     });
 
+    const mongoIdStr = order._id.toString();
+    const idPart = mongoIdStr.substring(mongoIdStr.length - 8).toUpperCase();
+
+    // Increment Counter sequence
+    const counter = await CounterDB.findOneAndUpdate(
+      { id: "orderId" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    const orderIdString = `SAN${idPart}${String(counter.seq).padStart(4, "0")}`;
+    order.orderId = orderIdString;
+
     const newOrder = await order.save();
     res.status(201).json(new OrderResponseDTO(newOrder));
   } catch (err) {
@@ -36,10 +49,11 @@ exports.createOrder = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   const { id } = req.params;
   const statusReq = new UpdateOrderStatusRequestDTO(req.body);
+  const query = id.startsWith("SAN") ? { orderId: id } : { _id: id };
 
   try {
-    const updatedOrder = await orderDB.findByIdAndUpdate(
-      id,
+    const updatedOrder = await orderDB.findOneAndUpdate(
+      query,
       { status: statusReq.status },
       { new: true }
     );
@@ -84,8 +98,9 @@ exports.getAllOrders = async (req, res) => {
 
 exports.cancelOrder = async (req, res) => {
   const { id } = req.params;
+  const query = id.startsWith("SAN") ? { orderId: id } : { _id: id };
   try {
-    const order = await orderDB.findById(id);
+    const order = await orderDB.findOne(query);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -110,13 +125,34 @@ exports.cancelOrder = async (req, res) => {
 exports.getOrderDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    let query = {};
+    if (id.startsWith("SAN")) {
+      query = { orderId: id };
+    } else if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      query = { _id: id };
+    } else {
       return res.status(400).json({ message: "Invalid order ID format" });
     }
-    const order = await orderDB.findById(id).populate('products.productId', 'name price images brand');
+    const order = await orderDB.findOne(query).populate('products.productId', 'name price images brand');
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+
+    // Security check: Only owner, matching guest email, or admin can load order details
+    const isAdmin = req.user && req.user.role === 'admin';
+    if (!isAdmin) {
+      if (order.userId) {
+        if (!req.user || req.user.id !== order.userId.toString()) {
+          return res.status(403).json({ message: "You are not authorized to view this order details" });
+        }
+      } else {
+        const { email } = req.query;
+        if (!email || email.trim().toLowerCase() !== order.guestEmail?.toLowerCase()) {
+          return res.status(403).json({ message: "You are not authorized to view this order. Registered email mismatch." });
+        }
+      }
+    }
+
     res.json(new OrderResponseDTO(order));
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -10,7 +10,7 @@ class OrderUserResponseDTO {
 
 class OrderResponseDTO {
   constructor(order) {
-    this.id = order._id;
+    this.id = order.orderId;
     
     // Check if user is populated (e.g. on admin order lists)
     this.user = order.userId && order.userId.name 

@@ -11,6 +11,18 @@ exports.createReturnRequest = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    // Verify ownership of order
+    if (order.userId) {
+      if (!req.user || req.user.id !== order.userId.toString()) {
+        return res.status(403).json({ message: "You are not authorized to return this order" });
+      }
+    } else {
+      const { email } = req.body;
+      if (!email || email.trim().toLowerCase() !== order.guestEmail?.toLowerCase()) {
+        return res.status(403).json({ message: "You are not authorized to return this order. Registered email mismatch." });
+      }
+    }
+
     // Verify order is delivered
     if (order.status?.toLowerCase() !== "delivered") {
       return res.status(400).json({ message: "Only delivered orders are eligible for return" });
