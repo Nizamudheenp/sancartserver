@@ -4,7 +4,7 @@ const OrderResponseDTO = require("../dtos/orderdto/OrderResponseDTO");
 const CreateOrderRequestDTO = require("../dtos/orderdto/CreateOrderRequestDTO");
 const UpdateOrderStatusRequestDTO = require("../dtos/orderdto/UpdateOrderStatusRequestDTO");
 
-exports.createOrder = async (req, res) => {
+exports.createOrder = async (req, res, next) => {
   try {
     const orderReq = new CreateOrderRequestDTO(req.body);
 
@@ -42,11 +42,11 @@ exports.createOrder = async (req, res) => {
     const newOrder = await order.save();
     res.status(201).json(new OrderResponseDTO(newOrder));
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.updateOrderStatus = async (req, res) => {
+exports.updateOrderStatus = async (req, res, next) => {
   const { id } = req.params;
   const statusReq = new UpdateOrderStatusRequestDTO(req.body);
   const query = id.startsWith("SAN") ? { orderId: id } : { _id: id };
@@ -64,12 +64,12 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.json(new OrderResponseDTO(updatedOrder));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
 
-exports.getUserOrders = async (req, res) => {
+exports.getUserOrders = async (req, res, next) => {
   try {
     const orders = await orderDB
       .find({ userId: req.user.id })
@@ -78,11 +78,11 @@ exports.getUserOrders = async (req, res) => {
 
     res.json(orders.map(order => new OrderResponseDTO(order)));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.getAllOrders = async (req, res) => {
+exports.getAllOrders = async (req, res, next) => {
   try {
     const orders = await orderDB
       .find()
@@ -92,11 +92,11 @@ exports.getAllOrders = async (req, res) => {
 
     res.json(orders.map(order => new OrderResponseDTO(order)));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.cancelOrder = async (req, res) => {
+exports.cancelOrder = async (req, res, next) => {
   const { id } = req.params;
   const query = id.startsWith("SAN") ? { orderId: id } : { _id: id };
   try {
@@ -118,11 +118,11 @@ exports.cancelOrder = async (req, res) => {
     const updatedOrder = await order.save();
     res.json(new OrderResponseDTO(updatedOrder));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.getOrderDetails = async (req, res) => {
+exports.getOrderDetails = async (req, res, next) => {
   try {
     const { id } = req.params;
     let query = {};
@@ -155,6 +155,6 @@ exports.getOrderDetails = async (req, res) => {
 
     res.json(new OrderResponseDTO(order));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };

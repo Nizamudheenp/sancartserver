@@ -1,7 +1,8 @@
 const ReturnDB = require('../models/ReturnModel');
 const OrderDB = require('../models/OrderModel');
+const ReturnResponseDTO = require('../dtos/returndto/ReturnResponseDTO');
 
-exports.createReturnRequest = async (req, res) => {
+exports.createReturnRequest = async (req, res, next) => {
   try {
     const { orderId, productId, reason, details, returnOption } = req.body;
 
@@ -35,7 +36,7 @@ exports.createReturnRequest = async (req, res) => {
     }
 
     // Extract image paths from uploaded files (Cloudinary URLs)
-    const images = req.files ? req.files.map(file => file.path) : [];
+    const images = req.files ? req.files.map(file => file.path || file.secure_url || file.url) : [];
 
     const newReturn = new ReturnDB({
       orderId,
@@ -49,27 +50,30 @@ exports.createReturnRequest = async (req, res) => {
     });
 
     await newReturn.save();
-    res.status(201).json({ message: "Return request submitted successfully", returnRequest: newReturn });
+    res.status(201).json({ 
+      message: "Return request submitted successfully", 
+      returnRequest: new ReturnResponseDTO(newReturn) 
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.getReturnRequests = async (req, res) => {
+exports.getReturnRequests = async (req, res, next) => {
   try {
     const returns = await ReturnDB.find()
       .populate('productId', 'name price images brand')
       .populate('userId', 'name email')
-      .populate('orderId', 'totalAmount shippingAddress')
+      .populate('orderId', 'totalAmount shippingAddress orderId')
       .sort({ createdAt: -1 });
 
-    res.json(returns);
+    res.json(returns.map(ret => new ReturnResponseDTO(ret)));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };
 
-exports.updateReturnRequestStatus = async (req, res) => {
+exports.updateReturnRequestStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -91,8 +95,11 @@ exports.updateReturnRequestStatus = async (req, res) => {
       await OrderDB.findByIdAndUpdate(returnRequest.orderId, { status: "refunded" });
     }
 
-    res.json({ message: "Return request status updated successfully", returnRequest });
+    res.json({ 
+      message: "Return request status updated successfully", 
+      returnRequest: new ReturnResponseDTO(returnRequest) 
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 };

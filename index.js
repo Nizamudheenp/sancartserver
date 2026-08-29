@@ -27,6 +27,13 @@ const authLimiter = rateLimit({
   message: { error: "Too many requests , please try again later." }
 });
 
+// General pub+lic API limiter for public details/returns lookup and submit endpoints
+const publicApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  message: { error: "Too many queries. Please try again later." }
+});
+
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials: true 
@@ -38,9 +45,9 @@ const sitemapRoutes = require("./routes/SitemapRoute");
 
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/returns', returnRoutes);
-app.use('/', sitemapRoutes); // Expose sitemap.xml
+app.use('/api/orders', publicApiLimiter, orderRoutes);
+app.use('/api/returns', publicApiLimiter, returnRoutes);
+app.use('/', sitemapRoutes); 
 
 // Register global error handler
 app.use(errorHandler);
