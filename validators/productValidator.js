@@ -26,6 +26,8 @@ const updateProductSchema = z.object({
   category: z.string().trim().min(1, 'Category cannot be empty').optional(),
   brand: z.string().trim().min(1, 'Brand cannot be empty').optional(),
   stock: z.coerce.number().int().nonnegative('Stock must be a non-negative integer').optional(),
+  existingImages: z.any().optional(),
+  images: z.any().optional(),
   tags: z.preprocess(
     (val) => {
       if (typeof val === 'string') {
@@ -36,7 +38,7 @@ const updateProductSchema = z.object({
     },
     z.array(z.string())
   ).optional()
-});
+}).passthrough();
 
 const addReviewSchema = z.object({
   rating: z.coerce.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating cannot exceed 5'),
