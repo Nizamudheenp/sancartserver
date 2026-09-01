@@ -49,7 +49,8 @@ exports.createOrder = async (req, res, next) => {
 exports.updateOrderStatus = async (req, res, next) => {
   const { id } = req.params;
   const statusReq = new UpdateOrderStatusRequestDTO(req.body);
-  const query = id.startsWith("SAN") ? { orderId: id } : { _id: id };
+  const isCustomId = typeof id === "string" && id.startsWith("SAN");
+  const query = isCustomId ? { orderId: id } : { _id: id };
 
   try {
     const updatedOrder = await orderDB.findOneAndUpdate(
