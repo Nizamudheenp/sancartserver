@@ -44,7 +44,7 @@ const errorHandler = require("./middleware/errorHandler");
 const sitemapRoutes = require("./routes/SitemapRoute");
 
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/products', productRoutes);
+app.use('/api/products', publicApiLimiter, productRoutes);
 app.use('/api/orders', publicApiLimiter, orderRoutes);
 app.use('/api/returns', publicApiLimiter, returnRoutes);
 app.use('/', sitemapRoutes); 

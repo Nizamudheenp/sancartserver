@@ -1,5 +1,6 @@
 const orderDB = require("../models/OrderModel");
 const CounterDB = require("../models/CounterModel");
+const CartDB = require("../models/CartModel");
 const OrderResponseDTO = require("../dtos/orderdto/OrderResponseDTO");
 const CreateOrderRequestDTO = require("../dtos/orderdto/CreateOrderRequestDTO");
 const UpdateOrderStatusRequestDTO = require("../dtos/orderdto/UpdateOrderStatusRequestDTO");
@@ -40,6 +41,12 @@ exports.createOrder = async (req, res, next) => {
     order.orderId = orderIdString;
 
     const newOrder = await order.save();
+
+    // Automatically clear database cart for authenticated users
+    if (req.user && req.user.id) {
+      await CartDB.findOneAndUpdate({ user: req.user.id }, { items: [] });
+    }
+
     res.status(201).json(new OrderResponseDTO(newOrder));
   } catch (err) {
     next(err);
@@ -110,7 +117,7 @@ exports.cancelOrder = async (req, res, next) => {
       return res.status(403).json({ message: "Not authorized to cancel this order" });
     }
     // Check status
-    const cancellableStatuses = ["pending", "processing", "paid"];
+    const cancellableStatuses = ["processing", "paid"];
     if (!cancellableStatuses.includes(order.status.toLowerCase())) {
       return res.status(400).json({ message: `Cannot cancel order in '${order.status}' status.` });
     }
@@ -140,7 +147,7 @@ exports.getOrderDetails = async (req, res, next) => {
     }
 
     // Security check: Only owner, matching guest email, or admin can load order details
-    const isAdmin = req.user && req.user.role === 'admin';
+    const isAdmin = Boolean(req.user?.isAdmin);
     if (!isAdmin) {
       if (order.userId) {
         if (!req.user || req.user.id !== order.userId.toString()) {

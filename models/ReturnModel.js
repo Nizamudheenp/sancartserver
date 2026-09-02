@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const ReturnSchema = new mongoose.Schema({
-  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true, index: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, index: true },
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
   reason: { type: String, required: true },
   details: { type: String, required: false },
