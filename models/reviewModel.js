@@ -19,7 +19,8 @@ const reviewSchema = new mongoose.Schema(
     },
     comment: {
       type: String,
-      required: true,
+      required: false,
+      default: '',
     },
     product: {
       type: mongoose.Schema.Types.ObjectId,

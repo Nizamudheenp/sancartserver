@@ -53,8 +53,8 @@ exports.addReview = async (req, res) => {
     return res.status(400).json({ message: 'User name is required.' });
   }
 
-  if (reviewReq.rating === undefined || reviewReq.rating === null) {
-    return res.status(400).json({ message: 'Rating is required.' });
+  if (!reviewReq.rating || reviewReq.rating < 1 || reviewReq.rating > 5) {
+    return res.status(400).json({ message: 'Please select a star rating between 1 and 5.' });
   }
 
   if (!mongoose.Types.ObjectId.isValid(productId)) {

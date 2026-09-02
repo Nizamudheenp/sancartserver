@@ -41,8 +41,8 @@ const updateProductSchema = z.object({
 }).passthrough();
 
 const addReviewSchema = z.object({
-  rating: z.coerce.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating cannot exceed 5'),
-  comment: z.string().trim().min(1, 'Comment is required'),
+  rating: z.coerce.number().int().min(1, 'Please select a star rating between 1 and 5').max(5, 'Rating cannot exceed 5'),
+  comment: z.string().trim().optional().default(''),
 });
 
 module.exports = {
