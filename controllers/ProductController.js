@@ -53,8 +53,8 @@ exports.addReview = async (req, res) => {
     return res.status(400).json({ message: 'User name is required.' });
   }
 
-  if (reviewReq.rating === undefined || reviewReq.rating === null) {
-    return res.status(400).json({ message: 'Rating is required.' });
+  if (!reviewReq.rating || reviewReq.rating < 1 || reviewReq.rating > 5) {
+    return res.status(400).json({ message: 'Please select a star rating between 1 and 5.' });
   }
 
   if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -157,7 +157,10 @@ exports.updateProduct = async (req, res) => {
     product.category = updateDto.category || product.category;
     product.tags = updateDto.tags || product.tags;
     product.stock = updateDto.stock ?? product.stock;
-    if (updateDto.images && updateDto.images.length > 0) product.images = updateDto.images;
+    if (updateDto.images !== undefined) {
+      product.images = updateDto.images;
+      product.markModified('images');
+    }
 
     const updated = await product.save();
     res.status(200).json(new ProductResponseDTO(updated));

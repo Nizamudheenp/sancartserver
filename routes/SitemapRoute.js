@@ -7,7 +7,7 @@ router.get('/sitemap.xml', async (req, res) => {
     const products = await ProductDB.find({}, '_id updatedAt');
     
     // Production domain configuration fallback
-    const baseUrl = process.env.FRONTEND_URL || 'https://sancart.in';
+    const baseUrl = process.env.FRONTEND_URL;
 
     const staticRoutes = [
       { url: '', changefreq: 'daily', priority: '1.0' },

@@ -3,6 +3,7 @@ const { getProducts, createProduct, getProductById, updateProduct, deleteProduct
 const { verifyAdmin } = require('../middleware/AuthMiddleware.js');
 const { verifyToken } = require('../middleware/AuthMiddleware.js');
 const upload = require('../middleware/uploadMiddleware.js');
+const optimizeAndUploadImages = require('../middleware/imageOptimizer.js');
 const { getCart, addToCart, updateCartItem, removeFromCart, clearCart, syncCart } = require('../controllers/CartController.js');
 const validate = require('../middleware/validate');
 const { createProductSchema, updateProductSchema, addReviewSchema } = require('../validators/productValidator');
@@ -11,10 +12,10 @@ const router = express.Router();
 
 router.get('/getproducts', getProducts);
 router.post('/addreview/:productId', verifyToken, validate(addReviewSchema), addReview);
-router.post('/createproduct', verifyToken, verifyAdmin, upload.array('images', 5), validate(createProductSchema), createProduct); 
+router.post('/createproduct', verifyToken, verifyAdmin, upload.array('images', 10), optimizeAndUploadImages, validate(createProductSchema), createProduct); 
 router.get('/getaproduct/:id', getProductById);
 router.get('/getfeaturedproducts', getFeaturedProducts)
-router.put("/updateProduct/:id", verifyToken, verifyAdmin, upload.array('images', 5), validate(updateProductSchema), updateProduct);
+router.put("/updateProduct/:id", verifyToken, verifyAdmin, upload.array('images', 10), optimizeAndUploadImages, validate(updateProductSchema), updateProduct);
 router.delete("/deleteProduct/:id", verifyToken, verifyAdmin, deleteProduct);
 
 router.get("/getCart", verifyToken, getCart);

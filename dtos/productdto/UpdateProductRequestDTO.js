@@ -15,8 +15,31 @@ class UpdateProductRequestDTO {
       }
     }
 
-    if (files && files.length > 0) {
-      this.images = files.map(file => file.path);
+    let existingImages = [];
+    const rawExisting = body.existingImages ?? body['existingImages[]'] ?? body.images ?? body['images[]'];
+    
+    if (rawExisting !== undefined && rawExisting !== null) {
+      if (typeof rawExisting === 'string') {
+        try {
+          const parsed = JSON.parse(rawExisting);
+          if (Array.isArray(parsed)) {
+            existingImages = parsed.map(img => typeof img === 'string' ? img.trim() : img).filter(Boolean);
+          } else if (parsed) {
+            existingImages = [String(parsed).trim()].filter(Boolean);
+          }
+        } catch {
+          existingImages = rawExisting.split(',').map(img => img.trim()).filter(Boolean);
+        }
+      } else if (Array.isArray(rawExisting)) {
+        existingImages = rawExisting.map(img => typeof img === 'string' ? img.trim() : img).filter(Boolean);
+      }
+    }
+
+    const uploadedImages = (files && files.length > 0) ? files.map(file => file.path).filter(Boolean) : [];
+
+    if (rawExisting !== undefined || uploadedImages.length > 0) {
+      // Deduplicate images while maintaining exact order
+      this.images = Array.from(new Set([...existingImages, ...uploadedImages]));
     }
   }
 }
