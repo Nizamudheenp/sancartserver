@@ -30,7 +30,7 @@ const authLimiter = rateLimit({
 // General public API limiter for browsing, products, orders, and returns: max 300 requests per 15 mins
 const publicApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 200,
   message: { error: "Too many requests. Please try again later." }
 });
 
