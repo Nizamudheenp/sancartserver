@@ -20,18 +20,18 @@ app.use(helmet());
 
 connectDB();
 
-// Stricter Rate Limiter for Auth: max 15 requests per 15 mins
+// Auth Rate Limiter: max 30 requests per 15 mins
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15,
-  message: { error: "Too many requests , please try again later." }
+  max: 30,
+  message: { error: "Too many authentication attempts. Please try again later." }
 });
 
-// General pub+lic API limiter for public details/returns lookup and submit endpoints
+// General public API limiter for browsing, products, orders, and returns: max 300 requests per 15 mins
 const publicApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 40,
-  message: { error: "Too many queries. Please try again later." }
+  max: 300,
+  message: { error: "Too many requests. Please try again later." }
 });
 
 app.use(cors({
