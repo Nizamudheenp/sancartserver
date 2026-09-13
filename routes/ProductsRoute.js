@@ -1,5 +1,5 @@
 const express = require('express');
-const { getProducts, createProduct, getProductById, updateProduct, deleteProduct, getFeaturedProducts, addReview } = require('../controllers/ProductController');
+const { getProducts, createProduct, getProductById, updateProduct, deleteProduct, getFeaturedProducts, addReview, seedExistingProducts } = require('../controllers/ProductController');
 const { verifyAdmin } = require('../middleware/AuthMiddleware.js');
 const { verifyToken } = require('../middleware/AuthMiddleware.js');
 const upload = require('../middleware/uploadMiddleware.js');
@@ -11,6 +11,7 @@ const { cartItemSchema } = require('../validators/cartValidator');
 const router = express.Router();
 
 router.get('/getproducts', getProducts);
+router.post('/seed-existing', verifyToken, verifyAdmin, seedExistingProducts);
 router.post('/addreview/:productId', verifyToken, validate(addReviewSchema), addReview);
 router.post('/createproduct', verifyToken, verifyAdmin, upload.array('images', 10), optimizeAndUploadImages, validate(createProductSchema), createProduct); 
 router.get('/getaproduct/:id', getProductById);
