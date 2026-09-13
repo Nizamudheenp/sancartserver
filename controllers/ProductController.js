@@ -95,6 +95,8 @@ exports.addReview = async (req, res) => {
 
 
 
+const { seedProductReviews } = require("../utils/reviewSeeder");
+
 exports.createProduct = async (req, res) => {
   try {
     const createDto = new CreateProductRequestDTO(req.body, req.files);
@@ -115,9 +117,39 @@ exports.createProduct = async (req, res) => {
     });
 
     const savedProduct = await newProduct.save();
+
+    const seeded = await seedProductReviews(savedProduct._id);
+    savedProduct.reviews = seeded.reviewIds;
+    savedProduct.numReviews = seeded.numReviews;
+    savedProduct.rating = seeded.rating;
+    await savedProduct.save();
+
     res.status(201).json(new ProductResponseDTO(savedProduct));
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+};
+
+exports.seedExistingProducts = async (req, res) => {
+  try {
+    const productsWithoutReviews = await ProductDB.find({
+      $or: [{ reviews: { $size: 0 } }, { numReviews: 0 }, { numReviews: { $exists: false } }]
+    });
+
+    let updatedCount = 0;
+    for (const product of productsWithoutReviews) {
+      const seeded = await seedProductReviews(product._id);
+      product.reviews = seeded.reviewIds;
+      product.numReviews = seeded.numReviews;
+      product.rating = seeded.rating;
+      await product.save();
+      updatedCount++;
+    }
+
+    res.json({ message: `Successfully seeded reviews for ${updatedCount} products.` });
+  } catch (err) {
+    console.error("Error seeding existing products:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
