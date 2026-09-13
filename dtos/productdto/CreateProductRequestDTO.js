@@ -10,9 +10,8 @@ class CreateProductRequestDTO {
       ? (body.isReadyToShip === 'true' || body.isReadyToShip === true)
       : true;
     this.category = body.category ? body.category.trim() : null;
-    this.brand = body.brand ? body.brand.trim() : null;
     this.stock = body.stock ? parseInt(body.stock, 10) : 0;
-    
+
     // Parse tags if sent as string or array
     if (Array.isArray(body.tags)) {
       this.tags = body.tags;

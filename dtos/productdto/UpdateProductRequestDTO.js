@@ -10,9 +10,8 @@ class UpdateProductRequestDTO {
       this.isReadyToShip = (body.isReadyToShip === 'true' || body.isReadyToShip === true);
     }
     if (body.category !== undefined) this.category = body.category.trim();
-    if (body.brand !== undefined) this.brand = body.brand.trim();
     if (body.stock !== undefined) this.stock = parseInt(body.stock, 10);
-    
+
     if (body.tags !== undefined) {
       if (Array.isArray(body.tags)) {
         this.tags = body.tags;
@@ -23,7 +22,7 @@ class UpdateProductRequestDTO {
 
     let existingImages = [];
     const rawExisting = body.existingImages ?? body['existingImages[]'] ?? body.images ?? body['images[]'];
-    
+
     if (rawExisting !== undefined && rawExisting !== null) {
       if (typeof rawExisting === 'string') {
         try {

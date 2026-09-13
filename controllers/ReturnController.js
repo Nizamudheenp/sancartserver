@@ -62,7 +62,7 @@ exports.createReturnRequest = async (req, res, next) => {
 exports.getReturnRequests = async (req, res, next) => {
   try {
     const returns = await ReturnDB.find()
-      .populate('productId', 'name price images brand')
+      .populate('productId', 'name price images')
       .populate('userId', 'name email')
       .populate('orderId', 'totalAmount shippingAddress orderId')
       .sort({ createdAt: -1 });

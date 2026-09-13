@@ -12,7 +12,6 @@ class ProductResponseDTO{
         this.isReadyToShip = product.isReadyToShip !== undefined ? product.isReadyToShip : true;
         this.images = product.images || [];
         this.category = product.category;
-        this.brand = product.brand;
         this.tags = product.tags || [];
         this.stock = product.stock || 0;
         this.rating = product.rating || 0;

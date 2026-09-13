@@ -82,7 +82,7 @@ exports.getUserOrders = async (req, res, next) => {
   try {
     const orders = await orderDB
       .find({ userId: req.user.id })
-      .populate('products.productId', 'name price images brand')
+      .populate('products.productId', 'name price images')
       .sort({ createdAt: -1 });
 
     res.json(orders.map(order => new OrderResponseDTO(order)));
@@ -95,7 +95,7 @@ exports.getAllOrders = async (req, res, next) => {
   try {
     const orders = await orderDB
       .find()
-      .populate('products.productId', 'name price images brand')
+      .populate('products.productId', 'name price images')
       .populate('userId', 'name email')
       .sort({ createdAt: -1 });
 
@@ -142,7 +142,7 @@ exports.getOrderDetails = async (req, res, next) => {
     } else {
       return res.status(400).json({ message: "Invalid order ID format" });
     }
-    const order = await orderDB.findOne(query).populate('products.productId', 'name price images brand');
+    const order = await orderDB.findOne(query).populate('products.productId', 'name price images');
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }

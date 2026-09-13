@@ -1,6 +1,30 @@
 const { z } = require('zod');
 
-const createProductSchema = z.object({
+const preprocessFormData = (obj) => {
+  if (obj && typeof obj === 'object') {
+    if (obj.tags === undefined && obj['tags[]'] !== undefined) {
+      obj.tags = obj['tags[]'];
+    }
+  }
+  return obj;
+};
+
+const parseTags = (val) => {
+  if (val === undefined || val === null) return undefined;
+  if (Array.isArray(val)) {
+    return val
+      .flatMap(t => typeof t === 'string' ? t.split(',') : [t])
+      .map(t => String(t).trim())
+      .filter(Boolean);
+  }
+  if (typeof val === 'string') {
+    if (!val.trim()) return [];
+    return val.split(',').map(t => t.trim()).filter(Boolean);
+  }
+  return val;
+};
+
+const createProductSchema = z.preprocess(preprocessFormData, z.object({
   name: z.string().trim().min(1, 'Name is required'),
   description: z.string().trim().min(1, 'Description is required'),
   price: z.coerce.number().positive('Price must be a positive number'),
@@ -9,21 +33,14 @@ const createProductSchema = z.object({
   size: z.string().trim().optional().default(''),
   isReadyToShip: z.preprocess((val) => val === 'true' || val === true, z.boolean()).optional().default(true),
   category: z.string().trim().min(1, 'Category is required'),
-  brand: z.string().trim().min(1, 'Brand is required'),
   stock: z.coerce.number().int().nonnegative('Stock must be a non-negative integer').default(0),
   tags: z.preprocess(
-    (val) => {
-      if (typeof val === 'string') {
-        if (!val.trim()) return [];
-        return val.split(',').map(t => t.trim());
-      }
-      return val;
-    },
+    (val) => parseTags(val) ?? [],
     z.array(z.string()).default([])
   )
-});
+}));
 
-const updateProductSchema = z.object({
+const updateProductSchema = z.preprocess(preprocessFormData, z.object({
   name: z.string().trim().min(1, 'Name cannot be empty').optional(),
   description: z.string().trim().min(1, 'Description cannot be empty').optional(),
   price: z.coerce.number().positive('Price must be a positive number').optional(),
@@ -32,21 +49,14 @@ const updateProductSchema = z.object({
   size: z.string().trim().optional(),
   isReadyToShip: z.preprocess((val) => val === 'true' || val === true, z.boolean()).optional(),
   category: z.string().trim().min(1, 'Category cannot be empty').optional(),
-  brand: z.string().trim().min(1, 'Brand cannot be empty').optional(),
   stock: z.coerce.number().int().nonnegative('Stock must be a non-negative integer').optional(),
   existingImages: z.any().optional(),
   images: z.any().optional(),
   tags: z.preprocess(
-    (val) => {
-      if (typeof val === 'string') {
-        if (!val.trim()) return [];
-        return val.split(',').map(t => t.trim());
-      }
-      return val;
-    },
+    parseTags,
     z.array(z.string())
   ).optional()
-}).passthrough();
+}).passthrough());
 
 const addReviewSchema = z.object({
   rating: z.coerce.number().int().min(1, 'Please select a star rating between 1 and 5').max(5, 'Rating cannot exceed 5'),

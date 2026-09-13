@@ -101,7 +101,7 @@ exports.createProduct = async (req, res) => {
   try {
     const createDto = new CreateProductRequestDTO(req.body, req.files);
 
-    if (!createDto.name || !createDto.description || !createDto.price || !createDto.category || !createDto.brand || !createDto.images || createDto.images.length === 0) {
+    if (!createDto.name || !createDto.description || !createDto.price || !createDto.category || !createDto.images || createDto.images.length === 0) {
       return res.status(400).json({ message: "All fields including images are required" });
     }
 
@@ -115,7 +115,6 @@ exports.createProduct = async (req, res) => {
       isReadyToShip: createDto.isReadyToShip,
       category: createDto.category,
       tags: createDto.tags,
-      brand: createDto.brand,
       stock: createDto.stock,
       images: createDto.images
     });
@@ -161,7 +160,7 @@ exports.getProductById = async (req, res) => {
   try {
     const product = await ProductDB.findOne({ _id: req.params.id }).populate('reviews');
     if (!product) {
-     return res.status(404).json({ message: "product not found" })
+      return res.status(404).json({ message: "product not found" })
     }
     return res.status(200).json(new ProductResponseDTO(product));
   } catch (error) {
@@ -193,9 +192,11 @@ exports.updateProduct = async (req, res) => {
     if (updateDto.weight !== undefined) product.weight = updateDto.weight;
     if (updateDto.size !== undefined) product.size = updateDto.size;
     if (updateDto.isReadyToShip !== undefined) product.isReadyToShip = updateDto.isReadyToShip;
-    product.brand = updateDto.brand || product.brand;
     product.category = updateDto.category || product.category;
-    product.tags = updateDto.tags || product.tags;
+    if (updateDto.tags !== undefined) {
+      product.tags = updateDto.tags;
+      product.markModified('tags');
+    }
     product.stock = updateDto.stock ?? product.stock;
     if (updateDto.images !== undefined) {
       product.images = updateDto.images;

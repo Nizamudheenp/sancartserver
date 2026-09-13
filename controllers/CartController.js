@@ -3,7 +3,7 @@ const CartResponseDTO = require("../dtos/cartdto/CartResponseDTO");
 const CartDB = require("../models/CartModel")
 
 exports.getCart = async (req, res) => {
-  const cart = await CartDB.findOne({ user: req.user.id }).populate("items.product", "name price images brand stock");
+  const cart = await CartDB.findOne({ user: req.user.id }).populate("items.product", "name price images stock");
    if (!cart) {
     return res.json({ user: req.user.id, items: [] });
   }
