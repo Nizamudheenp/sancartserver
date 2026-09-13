@@ -3,6 +3,12 @@ class CreateProductRequestDTO {
     this.name = body.name ? body.name.trim() : null;
     this.description = body.description ? body.description.trim() : null;
     this.price = body.price ? Number(body.price) : null;
+    this.mrp = body.mrp ? Number(body.mrp) : 0;
+    this.weight = body.weight ? body.weight.trim() : '';
+    this.size = body.size ? body.size.trim() : '';
+    this.isReadyToShip = body.isReadyToShip !== undefined
+      ? (body.isReadyToShip === 'true' || body.isReadyToShip === true)
+      : true;
     this.category = body.category ? body.category.trim() : null;
     this.brand = body.brand ? body.brand.trim() : null;
     this.stock = body.stock ? parseInt(body.stock, 10) : 0;

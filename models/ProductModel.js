@@ -9,10 +9,13 @@ const ProductSchema = new mongoose.Schema({
   brand: { type: String },
   tags: { type: [String], index: true},
   stock: { type: Number, default: 0 },
+  mrp: { type: Number, default: 0 },
+  weight: { type: String, default: '' },
+  size: { type: String, default: '' },
+  isReadyToShip: { type: Boolean, default: true },
   reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }],
   rating: { type: Number, default: 0 },
   numReviews: { type: Number, default: 0 },
-
 }, { timestamps: true });
 
 ProductSchema.index({createdAt: -1})

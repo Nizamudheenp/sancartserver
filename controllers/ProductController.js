@@ -109,6 +109,10 @@ exports.createProduct = async (req, res) => {
       name: createDto.name,
       description: createDto.description,
       price: createDto.price,
+      mrp: createDto.mrp,
+      weight: createDto.weight,
+      size: createDto.size,
+      isReadyToShip: createDto.isReadyToShip,
       category: createDto.category,
       tags: createDto.tags,
       brand: createDto.brand,
@@ -185,6 +189,10 @@ exports.updateProduct = async (req, res) => {
     product.name = updateDto.name || product.name;
     product.description = updateDto.description || product.description;
     product.price = updateDto.price || product.price;
+    if (updateDto.mrp !== undefined) product.mrp = updateDto.mrp;
+    if (updateDto.weight !== undefined) product.weight = updateDto.weight;
+    if (updateDto.size !== undefined) product.size = updateDto.size;
+    if (updateDto.isReadyToShip !== undefined) product.isReadyToShip = updateDto.isReadyToShip;
     product.brand = updateDto.brand || product.brand;
     product.category = updateDto.category || product.category;
     product.tags = updateDto.tags || product.tags;

@@ -6,6 +6,10 @@ class ProductResponseDTO{
         this.name = product.name;
         this.description = product.description;
         this.price = product.price;
+        this.mrp = product.mrp || 0;
+        this.weight = product.weight || '';
+        this.size = product.size || '';
+        this.isReadyToShip = product.isReadyToShip !== undefined ? product.isReadyToShip : true;
         this.images = product.images || [];
         this.category = product.category;
         this.brand = product.brand;

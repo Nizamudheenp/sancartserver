@@ -3,6 +3,12 @@ class UpdateProductRequestDTO {
     if (body.name !== undefined) this.name = body.name.trim();
     if (body.description !== undefined) this.description = body.description.trim();
     if (body.price !== undefined) this.price = Number(body.price);
+    if (body.mrp !== undefined) this.mrp = Number(body.mrp);
+    if (body.weight !== undefined) this.weight = body.weight.trim();
+    if (body.size !== undefined) this.size = body.size.trim();
+    if (body.isReadyToShip !== undefined) {
+      this.isReadyToShip = (body.isReadyToShip === 'true' || body.isReadyToShip === true);
+    }
     if (body.category !== undefined) this.category = body.category.trim();
     if (body.brand !== undefined) this.brand = body.brand.trim();
     if (body.stock !== undefined) this.stock = parseInt(body.stock, 10);
