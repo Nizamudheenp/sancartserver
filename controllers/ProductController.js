@@ -12,7 +12,7 @@ exports.getProducts = async (req, res) => {
 
     let filter = {};
     if (category && category !== 'all') filter.category = category;
-    if (tag) filter.tags = tag;
+    if (tag) filter.tags = { $regex: tag, $options: 'i' };
     if (search) filter.name = { $regex: search, $options: 'i' };
 
     let sortOption = { createdAt: -1 }; // default newest
