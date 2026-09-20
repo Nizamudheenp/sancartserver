@@ -8,12 +8,13 @@ const mongoose = require('mongoose')
 
 exports.getProducts = async (req, res) => {
   try {
-    const { category, tag, search, limit, page, sort } = req.query;
+    const { category, tag, search, limit, page, sort, excludeId } = req.query;
 
     let filter = {};
     if (category && category !== 'all') filter.category = category;
     if (tag) filter.tags = { $regex: tag, $options: 'i' };
     if (search) filter.name = { $regex: search, $options: 'i' };
+    if (excludeId) filter._id = { $ne: excludeId };
 
     let sortOption = { createdAt: -1 }; // default newest
     if (sort === 'price_asc') sortOption = { price: 1 };
