@@ -134,28 +134,7 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-exports.seedExistingProducts = async (req, res) => {
-  try {
-    const productsWithoutReviews = await ProductDB.find({
-      $or: [{ reviews: { $size: 0 } }, { numReviews: 0 }, { numReviews: { $exists: false } }]
-    });
 
-    let updatedCount = 0;
-    for (const product of productsWithoutReviews) {
-      const seeded = await seedProductReviews(product._id);
-      product.reviews = seeded.reviewIds;
-      product.numReviews = seeded.numReviews;
-      product.rating = seeded.rating;
-      await product.save();
-      updatedCount++;
-    }
-
-    res.json({ message: `Successfully seeded reviews for ${updatedCount} products.` });
-  } catch (err) {
-    console.error("Error seeding existing products:", err);
-    res.status(500).json({ error: err.message });
-  }
-};
 
 exports.getProductById = async (req, res) => {
   try {

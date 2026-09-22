@@ -1,4 +1,3 @@
-// Pool of authentic South Indian / Kerala & Indian Customer Names
 module.exports = [
   "Abhay Chandran", "Abhijith S.", "Abhinav B.", "Abhiram V.", "Abhishek Nair",
   "Adarsh S.", "Adithya Varma", "Afzal K.", "Agney V.", "Aiswarya Raj",
@@ -9,7 +8,7 @@ module.exports = [
   "Anurag S.", "Aparna Nambiar", "Archana P.", "Arjun K. V.", "Arun Kumar",
   "Ashiq V.", "Ashwathi R.", "Ashwin Das", "Aslam K.", "Athira V.",
   "Avinash M.", "Azeem Shafi", "Babu K.", "Balakrishnan R.", "Basith A.",
-  "Bhagya S.", "Bhavana Radhakrishnan", "Biju Varghese", "Binish K.", "Bino George",
+  "Bhagya S.", "Bhavana R.", "Biju Varghese", "Binish K.", "Bino George",
   "Bipin Das", "Chaitanya S.", "Chandran K.", "Charutha M.", "Deepa Sukumar",
   "Deepak K.", "Devadas V.", "Devika S.", "Dhanush R.", "Dileep Kumar",
   "Dinesh P.", "Divya Unni", "Dominic J.", "Faisal Rahiman", "Farhan M.",
@@ -42,5 +41,17 @@ module.exports = [
   "Swathi R.", "Unnikrishnan", "Varun Nair", "Vasisht S.", "Venkatesh R.",
   "Vidyadharan", "Vijesh K.", "Vikram S.", "Vimal Raj", "Vinay Kumar",
   "Vineeth Nair", "Vinomod V.", "Vinoy Thomas", "Vipin Das", "Vishnu Prasad", "Vivek S.",
-  "Vyshak P.", "Yadu Krishnan", "Yashwant S.", "Zainul Abid"
+  "Vyshak P.", "Yadu Krishnan", "Yashwant S.", "Zainul Abid",
+  "Karthikeyan M.", "Senthil Nathan", "Murugan K.", "Saravanan R.", "Vigneshwaran P.",
+  "Muthukumar S.", "Annamalai T.", "Selvamani V.", "Dhanasekaran G.", "Elango R.",
+  "Manikandan K.", "Sivakumar P.", "Balamurugan M.", "Gopalakrishnan R.",
+  "Kavitha S.", "Pavithra S.", "Meenakshi R.", "Soundarya K.", "Deepalakshmi S.",
+  "Aravind Swamy", "Shankar Ganesh", "Prabhu Deva R.", "Vasanth Kumar", "Jaganathan M.",
+  "Sundaresan K.", "Kamalesh N.", "Naveenkumar T.", "Subramanian V.", "Kandasamy P.",
+  "Raghavendra Rao", "Chethan Kumar", "Vinod P.", "Harish Acharya", "Ananya H.",
+  "Pooja K.", "Sahana B.", "Sindhu Rao", "Chaithra S.", "Yogesh M.",
+  "Sai Krishna M.", "Kalyan C.", "Chaitanya V.", "Vamsi Krishna", "Suresh N.",
+  "Phani Kumar", "Tarun Teja", "Bhanu Prasad", "Gopi Chand", "Ravi Shankar N.",
+  "Pavan Kalyan B.", "Madhu Sudhan R.", "Lavanya R.", "Sravani C.", "Mounika N.",
+  "Harika V.", "Keerthi Priya"
 ];
