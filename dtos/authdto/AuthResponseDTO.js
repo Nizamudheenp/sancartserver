@@ -4,7 +4,10 @@ class UserResponseDTO {
         this.name = user.name;
         this.email = user.email;
         this.isAdmin = user.isAdmin;
-        
+        this.notificationPreferences = user.notificationPreferences || {
+            emailNotifications: true,
+            inAppNotifications: true
+        };
     }
 }
 

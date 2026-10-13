@@ -1,9 +1,18 @@
 const orderDB = require("../models/OrderModel");
 const CounterDB = require("../models/CounterModel");
 const CartDB = require("../models/CartModel");
+const UserDB = require("../models/UserModel");
+const NotificationDB = require("../models/NotificationModel");
 const OrderResponseDTO = require("../dtos/orderdto/OrderResponseDTO");
 const CreateOrderRequestDTO = require("../dtos/orderdto/CreateOrderRequestDTO");
 const UpdateOrderStatusRequestDTO = require("../dtos/orderdto/UpdateOrderStatusRequestDTO");
+const NotificationResponseDTO = require("../dtos/notificationdto/NotificationResponseDTO");
+const { notifyClients } = require("../socket");
+const {
+  sendAdminNewOrderEmail,
+  sendCustomerOrderReceipt,
+  sendCustomerOrderStatusEmail,
+} = require("../utils/emailService");
 
 exports.createOrder = async (req, res, next) => {
   try {
@@ -48,6 +57,56 @@ exports.createOrder = async (req, res, next) => {
       await CartDB.findOneAndUpdate({ user: req.user.id }, { items: [] });
     }
 
+    // Populate products for email notifications
+    await newOrder.populate('products.productId', 'name title price');
+
+    // 1. Admin In-App & Email Notification
+    try {
+      const adminNotification = new NotificationDB({
+        forAdmin: true,
+        title: 'New Order Received',
+        message: `Order #${newOrder.orderId} placed for ₹${newOrder.totalAmount} (${newOrder.paymentMethod})`,
+        type: 'ADMIN_NEW_ORDER',
+        link: '/admin/orders',
+        metadata: { orderId: newOrder.orderId, totalAmount: newOrder.totalAmount }
+      });
+      await adminNotification.save();
+      notifyClients({ forAdmin: true, notification: new NotificationResponseDTO(adminNotification) });
+      sendAdminNewOrderEmail(newOrder);
+    } catch (notifErr) {
+      console.error('Failed to dispatch admin order notification:', notifErr.message);
+    }
+
+    // 2. Customer In-App & Email Notification
+    try {
+      if (req.user && req.user.id) {
+        const user = await UserDB.findById(req.user.id);
+        const userPrefs = user?.notificationPreferences || { emailNotifications: true, inAppNotifications: true };
+
+        if (userPrefs.inAppNotifications !== false) {
+          const userNotification = new NotificationDB({
+            recipient: req.user.id,
+            title: 'Order Placed Successfully',
+            message: `Your order #${newOrder.orderId} has been confirmed.`,
+            type: 'USER_ORDER_PLACED',
+            link: '/myorders',
+            metadata: { orderId: newOrder.orderId }
+          });
+          await userNotification.save();
+          notifyClients({ userId: req.user.id, notification: new NotificationResponseDTO(userNotification) });
+        }
+
+        if (userPrefs.emailNotifications !== false && user?.email) {
+          sendCustomerOrderReceipt(newOrder, user.email);
+        }
+      } else if (orderReq.guestEmail) {
+        // Guest user receipt
+        sendCustomerOrderReceipt(newOrder, orderReq.guestEmail);
+      }
+    } catch (custNotifErr) {
+      console.error('Failed to dispatch customer order notification:', custNotifErr.message);
+    }
+
     res.status(201).json(new OrderResponseDTO(newOrder));
   } catch (err) {
     next(err);
@@ -65,10 +124,45 @@ exports.updateOrderStatus = async (req, res, next) => {
       query,
       { status: statusReq.status },
       { new: true }
-    );
+    ).populate('userId', 'email notificationPreferences');
 
     if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Customer Notification on status change
+    try {
+      const allowedStatuses = ["shipped", "delivered", "cancelled"];
+      if (allowedStatuses.includes(statusReq.status?.toLowerCase())) {
+        const targetEmail = updatedOrder.guestEmail || updatedOrder.userId?.email;
+        const userPrefs = updatedOrder.userId?.notificationPreferences || {
+          emailNotifications: true,
+          inAppNotifications: true,
+        };
+
+        if (updatedOrder.userId && userPrefs.inAppNotifications !== false) {
+          const statusText = statusReq.status.charAt(0).toUpperCase() + statusReq.status.slice(1);
+          const userNotification = new NotificationDB({
+            recipient: updatedOrder.userId._id,
+            title: `Order ${statusText}`,
+            message: `Your order #${updatedOrder.orderId || updatedOrder._id} is now ${statusReq.status}.`,
+            type: 'USER_ORDER_STATUS',
+            link: '/myorders',
+            metadata: { orderId: updatedOrder.orderId, status: statusReq.status }
+          });
+          await userNotification.save();
+          notifyClients({
+            userId: updatedOrder.userId._id,
+            notification: new NotificationResponseDTO(userNotification),
+          });
+        }
+
+        if (targetEmail && (updatedOrder.guestEmail || userPrefs.emailNotifications !== false)) {
+          sendCustomerOrderStatusEmail(updatedOrder, targetEmail, statusReq.status);
+        }
+      }
+    } catch (statusNotifErr) {
+      console.error('Failed to dispatch status update notification:', statusNotifErr.message);
     }
 
     res.json(new OrderResponseDTO(updatedOrder));
