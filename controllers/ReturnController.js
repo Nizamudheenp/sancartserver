@@ -1,6 +1,13 @@
 const ReturnDB = require('../models/ReturnModel');
 const OrderDB = require('../models/OrderModel');
+const NotificationDB = require('../models/NotificationModel');
 const ReturnResponseDTO = require('../dtos/returndto/ReturnResponseDTO');
+const NotificationResponseDTO = require('../dtos/notificationdto/NotificationResponseDTO');
+const { notifyClients } = require('../socket');
+const {
+  sendAdminNewReturnEmail,
+  sendCustomerReturnDecisionEmail,
+} = require('../utils/emailService');
 
 exports.createReturnRequest = async (req, res, next) => {
   try {
@@ -50,6 +57,30 @@ exports.createReturnRequest = async (req, res, next) => {
     });
 
     await newReturn.save();
+
+    // Trigger Admin Notification & Email
+    try {
+      const adminNotification = new NotificationDB({
+        forAdmin: true,
+        title: 'New Return Request',
+        message: `Return request submitted for order #${order.orderId || order._id} (${returnOption})`,
+        type: 'ADMIN_NEW_RETURN',
+        link: '/admin/orders',
+        metadata: { returnId: newReturn._id, orderId: order.orderId || order._id, returnOption }
+      });
+      await adminNotification.save();
+      notifyClients({ forAdmin: true, notification: new NotificationResponseDTO(adminNotification) });
+      sendAdminNewReturnEmail({
+        _id: newReturn._id,
+        orderId: order.orderId || order._id,
+        reason,
+        details,
+        returnOption,
+      });
+    } catch (notifErr) {
+      console.error('Failed to dispatch admin return notification:', notifErr.message);
+    }
+
     res.status(201).json({ 
       message: "Return request submitted successfully", 
       returnRequest: new ReturnResponseDTO(newReturn) 
@@ -93,6 +124,41 @@ exports.updateReturnRequestStatus = async (req, res, next) => {
     // Automatically update Order status if approved for Refund
     if (status === "approved" && returnRequest.returnOption === "Refund") {
       await OrderDB.findByIdAndUpdate(returnRequest.orderId, { status: "refunded" });
+    }
+
+    // Customer Notification on decision
+    try {
+      if (["approved", "rejected"].includes(status?.toLowerCase())) {
+        const order = await OrderDB.findById(returnRequest.orderId).populate('userId', 'email notificationPreferences');
+        const targetEmail = order?.guestEmail || order?.userId?.email;
+        const userPrefs = order?.userId?.notificationPreferences || {
+          emailNotifications: true,
+          inAppNotifications: true,
+        };
+
+        if (order?.userId && userPrefs.inAppNotifications !== false) {
+          const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+          const userNotification = new NotificationDB({
+            recipient: order.userId._id,
+            title: `Return Request ${statusText}`,
+            message: `Your return request for order #${order.orderId || order._id} has been ${status}.`,
+            type: 'USER_RETURN_STATUS',
+            link: '/myorders',
+            metadata: { returnId: returnRequest._id, status }
+          });
+          await userNotification.save();
+          notifyClients({
+            userId: order.userId._id,
+            notification: new NotificationResponseDTO(userNotification),
+          });
+        }
+
+        if (targetEmail && (order?.guestEmail || userPrefs.emailNotifications !== false)) {
+          sendCustomerReturnDecisionEmail(returnRequest, targetEmail, status);
+        }
+      }
+    } catch (returnNotifErr) {
+      console.error('Failed to dispatch return decision notification:', returnNotifErr.message);
     }
 
     res.json({ 
