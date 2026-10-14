@@ -28,6 +28,7 @@ const NotificationSchema = new mongoose.Schema(
       enum: [
         'ADMIN_NEW_ORDER',
         'ADMIN_NEW_RETURN',
+        'ADMIN_ORDER_CANCELLED',
         'USER_ORDER_PLACED',
         'USER_ORDER_STATUS',
         'USER_RETURN_STATUS',
