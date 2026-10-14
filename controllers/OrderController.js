@@ -204,12 +204,13 @@ exports.cancelOrder = async (req, res, next) => {
   const { id } = req.params;
   const query = id.startsWith("SAN") ? { orderId: id } : { _id: id };
   try {
-    const order = await orderDB.findOne(query);
+    const order = await orderDB.findOne(query).populate('userId', 'email notificationPreferences');
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
     // Verify ownership
-    if (order.userId && order.userId.toString() !== req.user.id) {
+    const orderUserId = (order.userId?._id || order.userId)?.toString();
+    if (orderUserId && orderUserId !== req.user.id) {
       return res.status(403).json({ message: "Not authorized to cancel this order" });
     }
     // Check status
@@ -221,6 +222,55 @@ exports.cancelOrder = async (req, res, next) => {
     order.status = "cancelled";
     const updatedOrder = await order.save();
     await updatedOrder.populate('products.productId', 'name price images');
+
+    // Customer and Admin notification & email dispatch on cancellation
+    try {
+      const userPrefs = order.userId?.notificationPreferences || {
+        emailNotifications: true,
+        inAppNotifications: true,
+      };
+
+      // 1. Customer In-App Notification
+      if (order.userId && userPrefs.inAppNotifications !== false) {
+        const userNotification = new NotificationDB({
+          recipient: orderUserId,
+          title: 'Order Cancelled',
+          message: `Your order #${updatedOrder.orderId || updatedOrder._id} has been cancelled successfully.`,
+          type: 'USER_ORDER_STATUS',
+          link: '/myorders',
+          metadata: { orderId: updatedOrder.orderId, status: 'cancelled' }
+        });
+        await userNotification.save();
+        notifyClients({
+          userId: orderUserId,
+          notification: new NotificationResponseDTO(userNotification),
+        });
+      }
+
+      // 2. Customer Email
+      const targetEmail = updatedOrder.guestEmail || order.userId?.email;
+      if (targetEmail && (updatedOrder.guestEmail || userPrefs.emailNotifications !== false)) {
+        sendCustomerOrderStatusEmail(updatedOrder, targetEmail, 'cancelled');
+      }
+
+      // 3. Admin In-App Notification
+      const adminNotification = new NotificationDB({
+        forAdmin: true,
+        title: 'Order Cancelled by Customer',
+        message: `Order #${updatedOrder.orderId || updatedOrder._id} was cancelled by the customer.`,
+        type: 'ADMIN_ORDER_CANCELLED',
+        link: '/admin/orders',
+        metadata: { orderId: updatedOrder.orderId, status: 'cancelled' }
+      });
+      await adminNotification.save();
+      notifyClients({
+        forAdmin: true,
+        notification: new NotificationResponseDTO(adminNotification),
+      });
+    } catch (notifErr) {
+      console.error('Failed to dispatch cancel notifications:', notifErr.message);
+    }
+
     res.json(new OrderResponseDTO(updatedOrder));
   } catch (err) {
     next(err);
