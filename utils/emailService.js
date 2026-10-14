@@ -8,25 +8,18 @@ const {
   contactMessageTemplate,
 } = require('../templates/email');
 
-let transporterInstance = null;
-
 const getTransporter = () => {
   if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
-    console.warn('Email warning: MAIL_USER or MAIL_PASS environment variables are not set.');
     return null;
   }
 
-  if (!transporterInstance) {
-    transporterInstance = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
-  }
-
-  return transporterInstance;
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
+    },
+  });
 };
 
 /**
