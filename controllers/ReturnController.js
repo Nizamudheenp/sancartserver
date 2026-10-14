@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const ReturnDB = require('../models/ReturnModel');
 const OrderDB = require('../models/OrderModel');
 const NotificationDB = require('../models/NotificationModel');
@@ -13,8 +14,17 @@ exports.createReturnRequest = async (req, res, next) => {
   try {
     const { orderId, productId, reason, details, returnOption } = req.body;
 
-    // Check if order exists
-    const order = await OrderDB.findById(orderId);
+    // Check if order exists by business orderId or MongoDB ObjectId
+    let orderQuery = {};
+    if (typeof orderId === 'string' && orderId.startsWith('SAN')) {
+      orderQuery = { orderId };
+    } else if (orderId && mongoose.Types.ObjectId.isValid(orderId)) {
+      orderQuery = { _id: orderId };
+    } else {
+      return res.status(400).json({ message: "Invalid order ID format" });
+    }
+
+    const order = await OrderDB.findOne(orderQuery);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -46,7 +56,7 @@ exports.createReturnRequest = async (req, res, next) => {
     const images = req.files ? req.files.map(file => file.path || file.secure_url || file.url) : [];
 
     const newReturn = new ReturnDB({
-      orderId,
+      orderId: order._id,
       productId,
       userId: req.user ? req.user.id : order.userId,
       reason,
