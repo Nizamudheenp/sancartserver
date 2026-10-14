@@ -8,18 +8,31 @@ const {
   contactMessageTemplate,
 } = require('../templates/email');
 
+let transporterInstance = null;
+
 const getTransporter = () => {
   if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
     console.warn('Email warning: MAIL_USER or MAIL_PASS environment variables are not set.');
     return null;
   }
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
-    },
-  });
+
+  if (!transporterInstance) {
+    transporterInstance = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // Direct SSL
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+      family: 4, // Force IPv4 to prevent hanging on Linux cloud hosts (Render)
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 8000,
+    });
+  }
+
+  return transporterInstance;
 };
 
 /**

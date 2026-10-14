@@ -2,13 +2,16 @@ const ContactMessageRequestDTO = require('../dtos/messagedto/ContactMessageReque
 const { sendContactFormEmail } = require('../utils/emailService');
 
 exports.contactEmail = async (req, res, next) => {
-  const messageReq = new ContactMessageRequestDTO(req.body);
-
   try {
-    await sendContactFormEmail(messageReq);
+    const messageReq = new ContactMessageRequestDTO(req.body);
+
+    sendContactFormEmail(messageReq).catch((err) => {
+      console.error('Error sending contact email in background:', err.message);
+    });
+
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (err) {
-    console.error('Error sending contact email:', err);
+    console.error('Error processing contact email:', err);
     res.status(500).json({ error: 'Failed to send email' });
   }
 };
