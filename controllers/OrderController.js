@@ -124,7 +124,8 @@ exports.updateOrderStatus = async (req, res, next) => {
       query,
       { status: statusReq.status },
       { new: true }
-    ).populate('userId', 'email notificationPreferences');
+    ).populate('userId', 'name email notificationPreferences')
+     .populate('products.productId', 'name price images');
 
     if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
@@ -219,6 +220,7 @@ exports.cancelOrder = async (req, res, next) => {
 
     order.status = "cancelled";
     const updatedOrder = await order.save();
+    await updatedOrder.populate('products.productId', 'name price images');
     res.json(new OrderResponseDTO(updatedOrder));
   } catch (err) {
     next(err);

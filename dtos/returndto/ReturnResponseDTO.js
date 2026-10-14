@@ -2,7 +2,6 @@ const ProductResponseDTO = require('../productdto/ProductResponseDTO');
 
 class ReturnUserResponseDTO {
   constructor(user) {
-    this.id = user._id;
     this.name = user.name;
     this.email = user.email;
   }
@@ -10,7 +9,7 @@ class ReturnUserResponseDTO {
 
 class ReturnOrderResponseDTO {
   constructor(order) {
-    this.id = order.orderId || order._id;
+    this.id = order.orderId;
     this.totalAmount = order.totalAmount;
     this.shippingAddress = order.shippingAddress;
   }
@@ -19,18 +18,18 @@ class ReturnOrderResponseDTO {
 class ReturnResponseDTO {
   constructor(ret) {
     this.id = ret._id;
-    
+
     this.order = ret.orderId && (ret.orderId.totalAmount || ret.orderId.orderId)
       ? new ReturnOrderResponseDTO(ret.orderId)
-      : ret.orderId;
+      : null;
 
     this.user = ret.userId && ret.userId.name
       ? new ReturnUserResponseDTO(ret.userId)
-      : ret.userId;
+      : null;
 
     this.product = ret.productId && ret.productId.name
       ? new ProductResponseDTO(ret.productId)
-      : ret.productId;
+      : null;
 
     this.reason = ret.reason;
     this.details = ret.details;

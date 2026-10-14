@@ -5,10 +5,11 @@ const CartDB = require("../models/CartModel")
 exports.getCart = async (req, res) => {
   const cart = await CartDB.findOne({ user: req.user.id }).populate("items.product", "name price images stock");
    if (!cart) {
-    return res.json({ user: req.user.id, items: [] });
+    return res.json(new CartResponseDTO({ items: [] }));
   }
   res.json(new CartResponseDTO(cart));
 };
+
 exports.addToCart = async (req, res) => {
   const itemReq = new CartItemRequestDTO(req.body);
   let cart = await CartDB.findOne({ user: req.user.id });

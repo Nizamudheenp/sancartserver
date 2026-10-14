@@ -17,24 +17,21 @@ const returnRoutes = require("./routes/ReturnRoute");
 const notificationRoutes = require("./routes/NotificationRoute");
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
-// Initialize Socket.io on the HTTP server
 initSocket(server);
 
-// Register helmet for secure HTTP headers
 app.use(helmet());
 
 connectDB();
 
-// Auth Rate Limiter: max 30 requests per 15 mins
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30,
+  windowMs: 15 * 60 * 1000, 
+  max: 15,
   message: { error: "Too many authentication attempts. Please try again later." }
 });
 
-// General public API limiter for browsing, products, orders, and returns: max 300 requests per 15 mins
 const publicApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -57,7 +54,6 @@ app.use('/api/returns', publicApiLimiter, returnRoutes);
 app.use('/api/notifications', publicApiLimiter, notificationRoutes);
 app.use('/', sitemapRoutes); 
 
-// Register global error handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
