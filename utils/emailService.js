@@ -27,18 +27,36 @@ const getTransporter = () => {
  */
 const sendMailSafe = async ({ to, subject, html, replyTo }) => {
   try {
-    const transporter = getTransporter();
-    if (!transporter || !to) return;
+    if (!process.env.MAIL_USER) {
+      console.error('[EmailService] ❌ Missing environment variable: MAIL_USER');
+      return;
+    }
+    if (!process.env.MAIL_PASS) {
+      console.error('[EmailService] ❌ Missing environment variable: MAIL_PASS');
+      return;
+    }
+    if (!to) {
+      console.error('[EmailService] ❌ Missing recipient "to" address');
+      return;
+    }
 
-    await transporter.sendMail({
+    const transporter = getTransporter();
+    if (!transporter) {
+      console.error('[EmailService] ❌ Transporter failed to create');
+      return;
+    }
+
+    console.log(`[EmailService] 📤 Sending email to: "${to}" (Subject: "${subject}")...`);
+    const info = await transporter.sendMail({
       from: `"Sancart Store" <${process.env.MAIL_USER}>`,
       to,
       subject,
       html,
       ...(replyTo ? { replyTo } : {}),
     });
+    console.log(`[EmailService] ✅ Email delivered to Gmail server! Message ID: ${info.messageId}`);
   } catch (err) {
-    console.error(`Failed to send email to ${to}:`, err.message);
+    console.error(`[EmailService] ❌ Failed to send email to ${to}:`, err.message);
   }
 };
 
@@ -97,7 +115,10 @@ exports.sendCustomerReturnDecisionEmail = async (returnReq, targetEmail, status)
  * 6. Contact Form Inquiry
  */
 exports.sendContactFormEmail = async ({ name, email, message }) => {
-  if (!process.env.MAIL_TO) return;
+  if (!process.env.MAIL_TO) {
+    console.error('[EmailService] ❌ Cannot send contact form: MAIL_TO is not defined in environment variables!');
+    return;
+  }
   const subject = `New Contact Form Submission from ${name}`;
   const html = contactMessageTemplate({ name, email, message });
   await sendMailSafe({
