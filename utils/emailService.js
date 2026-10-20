@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const {
   adminOrderTemplate,
   adminReturnTemplate,
@@ -8,31 +8,22 @@ const {
   contactMessageTemplate,
 } = require('../templates/email');
 
-const getTransporter = () => {
-  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+const RESENDAPIKEY = process.env.RESEND_API_KEY;
+const MAILFROM = process.env.MAIL_FROM;
+const MAILTO = process.env.MAIL_TO;
+
+const getResendClient = () => {
+  if (!RESENDAPIKEY) {
     return null;
   }
-
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
-    },
-  });
+  return new Resend(RESENDAPIKEY);
 };
 
-/**
- * Generic email dispatcher with error isolation
- */
+
 const sendMailSafe = async ({ to, subject, html, replyTo }) => {
   try {
-    if (!process.env.MAIL_USER) {
-      console.error('[EmailService] ❌ Missing environment variable: MAIL_USER');
-      return;
-    }
-    if (!process.env.MAIL_PASS) {
-      console.error('[EmailService] ❌ Missing environment variable: MAIL_PASS');
+    if (!RESENDAPIKEY) {
+      console.error('[EmailService] ❌ Missing environment variable: RESEND_API_KEY');
       return;
     }
     if (!to) {
@@ -40,21 +31,32 @@ const sendMailSafe = async ({ to, subject, html, replyTo }) => {
       return;
     }
 
-    const transporter = getTransporter();
-    if (!transporter) {
-      console.error('[EmailService] ❌ Transporter failed to create');
+    const resend = getResendClient();
+    if (!resend) {
+      console.error('[EmailService] ❌ Resend client failed to initialize');
+      return;
+    }
+
+    if (!MAILFROM) {
+      console.error('[EmailService] ❌ Missing environment variable: MAIL_FROM');
       return;
     }
 
     console.log(`[EmailService] 📤 Sending email to: "${to}" (Subject: "${subject}")...`);
-    const info = await transporter.sendMail({
-      from: `"Sancart Store" <${process.env.MAIL_USER}>`,
+    const { data, error } = await resend.emails.send({
+      from: MAILFROM,
       to,
       subject,
       html,
-      ...(replyTo ? { replyTo } : {}),
+      ...(replyTo ? { reply_to: replyTo } : {}),
     });
-    console.log(`[EmailService] ✅ Email delivered to Gmail server! Message ID: ${info.messageId}`);
+
+    if (error) {
+      console.error(`[EmailService] ❌ Resend API error:`, error.message);
+      return;
+    }
+
+    console.log(`[EmailService] ✅ Email delivered via Resend! ID: ${data?.id}`);
   } catch (err) {
     console.error(`[EmailService] ❌ Failed to send email to ${to}:`, err.message);
   }
@@ -64,21 +66,21 @@ const sendMailSafe = async ({ to, subject, html, replyTo }) => {
  * 1. Admin Alert: New Order Placed
  */
 exports.sendAdminNewOrderEmail = async (order) => {
-  if (!process.env.MAIL_TO) return;
+  if (!MAILTO) return;
   const subject = `[New Order] #${order.orderId || order._id} - ₹${order.totalAmount}`;
   const html = adminOrderTemplate(order);
-  await sendMailSafe({ to: process.env.MAIL_TO, subject, html });
+  await sendMailSafe({ to: MAILTO, subject, html });
 };
 
 /**
  * 2. Admin Alert: New Return Request
  */
 exports.sendAdminNewReturnEmail = async (returnReq) => {
-  if (!process.env.MAIL_TO) return;
+  if (!MAILTO) return;
   const orderId = returnReq.orderId?.orderId || returnReq.orderId || returnReq._id;
   const subject = `[Return Request] For Order #${orderId}`;
   const html = adminReturnTemplate(returnReq);
-  await sendMailSafe({ to: process.env.MAIL_TO, subject, html });
+  await sendMailSafe({ to: MAILTO, subject, html });
 };
 
 /**
@@ -115,14 +117,14 @@ exports.sendCustomerReturnDecisionEmail = async (returnReq, targetEmail, status)
  * 6. Contact Form Inquiry
  */
 exports.sendContactFormEmail = async ({ name, email, message }) => {
-  if (!process.env.MAIL_TO) {
+  if (!MAILTO) {
     console.error('[EmailService] ❌ Cannot send contact form: MAIL_TO is not defined in environment variables!');
     return;
   }
   const subject = `New Contact Form Submission from ${name}`;
   const html = contactMessageTemplate({ name, email, message });
   await sendMailSafe({
-    to: process.env.MAIL_TO,
+    to: MAILTO,
     subject,
     html,
     replyTo: email,
