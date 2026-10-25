@@ -24,6 +24,7 @@ class OrderResponseDTO {
     this.totalAmount = order.totalAmount;
     this.shippingAddress = order.shippingAddress;
     this.paymentMethod = order.paymentMethod;
+    this.paymentId = order.paymentId;
     this.status = order.status;
     this.createdAt = order.createdAt;
     if (order.guestEmail) {
