@@ -26,12 +26,24 @@ exports.createOrder = async (req, res, next) => {
       return res.status(400).json({ message: "Required order/payment data missing." });
     }
 
+    const { fullName, phone, street, city, state, pincode } = orderReq.shippingAddress || {};
+    if (!fullName || !phone || !street || !city || !state || !pincode) {
+      return res.status(400).json({ message: "Incomplete shipping address: Name, Phone, Street, City, State, and PIN code are required." });
+    }
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      return res.status(400).json({ message: "Invalid 10-digit mobile number." });
+    }
+    if (!/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ message: "Invalid 6-digit postal PIN code." });
+    }
+
     const order = new orderDB({
       userId: req.user ? req.user.id : undefined,
       guestEmail: req.user ? undefined : orderReq.guestEmail,
       products: orderReq.products,
       totalAmount: orderReq.totalAmount,
       shippingAddress: orderReq.shippingAddress,
+      customerPhone: orderReq.customerPhone,
       paymentId: orderReq.paymentId || "COD",
       paymentMethod: orderReq.paymentMethod || "Online",
       status: orderReq.status,

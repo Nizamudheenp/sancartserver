@@ -1,4 +1,5 @@
 const baseEmailLayout = require('./baseEmailLayout');
+const { formatEmailAddress } = require('./emailAddressHelper');
 
 const customerOrderReceiptTemplate = (order) => {
   const itemsRows = (order.products || [])
@@ -40,7 +41,7 @@ const customerOrderReceiptTemplate = (order) => {
         </tr>
         <tr>
           <td style="color: #64748b; vertical-align: top;"><strong>Delivery Address:</strong></td>
-          <td style="color: #0f172a;">${order.shippingAddress}</td>
+          <td style="color: #0f172a; line-height: 1.5;">${formatEmailAddress(order.shippingAddress)}</td>
         </tr>
       </table>
     </div>

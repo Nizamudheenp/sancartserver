@@ -23,6 +23,7 @@ class OrderResponseDTO {
       : [];
     this.totalAmount = order.totalAmount;
     this.shippingAddress = order.shippingAddress;
+    this.customerPhone = order.customerPhone || order.shippingAddress?.phone || null;
     this.paymentMethod = order.paymentMethod;
     this.paymentId = order.paymentId;
     this.status = order.status;

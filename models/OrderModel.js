@@ -1,5 +1,15 @@
 const mongoose = require('mongoose');
 
+const ShippingAddressSchema = new mongoose.Schema({
+  fullName: { type: String, required: true, trim: true },
+  phone: { type: String, required: true, trim: true },
+  street: { type: String, required: true, trim: true },
+  landmark: { type: String, default: '', trim: true },
+  city: { type: String, required: true, trim: true },
+  state: { type: String, required: true, trim: true },
+  pincode: { type: String, required: true, trim: true }
+}, { _id: false });
+
 const OrderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, index: true },
   orderId: { type: String, unique: true, sparse: true },
@@ -11,7 +21,8 @@ const OrderSchema = new mongoose.Schema({
     }
   ],
   totalAmount: { type: Number, required: true },
-  shippingAddress: { type: String, required: true },
+  shippingAddress: { type: ShippingAddressSchema, required: true },
+  customerPhone: { type: String, required: true, trim: true },
   paymentId: { type: String, required: false },
   paymentMethod: {
     type: String,
