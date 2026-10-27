@@ -12,6 +12,13 @@ const createReturnSchema = z.object({
   }),
 });
 
+const updateReturnStatusSchema = z.object({
+  status: z.enum(["pending", "approved", "rejected", "completed"], {
+    errorMap: () => ({ message: 'Status must be one of: pending, approved, rejected, completed' })
+  }),
+});
+
 module.exports = {
   createReturnSchema,
+  updateReturnStatusSchema,
 };

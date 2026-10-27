@@ -3,6 +3,7 @@ const CounterDB = require("../models/CounterModel");
 const CartDB = require("../models/CartModel");
 const UserDB = require("../models/UserModel");
 const NotificationDB = require("../models/NotificationModel");
+const ProductDB = require("../models/ProductModel");
 const OrderResponseDTO = require("../dtos/orderdto/OrderResponseDTO");
 const CreateOrderRequestDTO = require("../dtos/orderdto/CreateOrderRequestDTO");
 const UpdateOrderStatusRequestDTO = require("../dtos/orderdto/UpdateOrderStatusRequestDTO");
@@ -26,22 +27,39 @@ exports.createOrder = async (req, res, next) => {
       return res.status(400).json({ message: "Required order/payment data missing." });
     }
 
-    const { fullName, phone, street, city, state, pincode } = orderReq.shippingAddress || {};
-    if (!fullName || !phone || !street || !city || !state || !pincode) {
-      return res.status(400).json({ message: "Incomplete shipping address: Name, Phone, Street, City, State, and PIN code are required." });
+    // 1. Prevent Razorpay Payment ID Replay attacks
+    if (orderReq.paymentId && orderReq.paymentId !== "COD") {
+      const existingPaymentOrder = await orderDB.findOne({ paymentId: orderReq.paymentId });
+      if (existingPaymentOrder) {
+        return res.status(400).json({
+          message: "This payment ID has already been utilized for an existing order.",
+        });
+      }
     }
-    if (!/^[6-9]\d{9}$/.test(phone)) {
-      return res.status(400).json({ message: "Invalid 10-digit mobile number." });
+
+    // 2. Authoritative Server-Side Price Calculation (eliminates client price manipulation)
+    const productIds = orderReq.products.map((p) => p.productId);
+    const dbProducts = await ProductDB.find({ _id: { $in: productIds } });
+
+    if (dbProducts.length !== productIds.length) {
+      return res.status(400).json({
+        message: "One or more products in your cart could not be found or are no longer available.",
+      });
     }
-    if (!/^\d{6}$/.test(pincode)) {
-      return res.status(400).json({ message: "Invalid 6-digit postal PIN code." });
-    }
+
+    const priceMap = new Map();
+    dbProducts.forEach((p) => priceMap.set(p._id.toString(), p.price));
+
+    const serverCalculatedTotal = orderReq.products.reduce((sum, item) => {
+      const price = priceMap.get(item.productId.toString()) || 0;
+      return sum + price * (item.quantity || 1);
+    }, 0);
 
     const order = new orderDB({
       userId: req.user ? req.user.id : undefined,
       guestEmail: req.user ? undefined : orderReq.guestEmail,
       products: orderReq.products,
-      totalAmount: orderReq.totalAmount,
+      totalAmount: serverCalculatedTotal,
       shippingAddress: orderReq.shippingAddress,
       customerPhone: orderReq.customerPhone,
       paymentId: orderReq.paymentId || "COD",
@@ -137,7 +155,7 @@ exports.updateOrderStatus = async (req, res, next) => {
       { status: statusReq.status },
       { new: true }
     ).populate('userId', 'name email notificationPreferences')
-     .populate('products.productId', 'name price images');
+      .populate('products.productId', 'name price images');
 
     if (!updatedOrder) {
       return res.status(404).json({ message: "Order not found" });
